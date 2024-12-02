@@ -54,12 +54,41 @@ public class Client {
         }).start();
     }
 
+    private void handleServerMessage(Message message) {
+        try {
+            switch (message.getType()) {
+                case "WELCOME":
+                break;
+
+                case "GAME_START":
+                break;
+
+                case "QUESTION":
+                break;
+
+                case "ANSWER_RESULT":
+                break;
+
+                case "GAME_END":
+                break;
+
+
+        }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(frame, "Error processing server message: " + e.getMessage());
+        }
+    }
+
     private void createQuestionPanel() {
         questionPanel = new JPanel(new BorderLayout());
         ArrayList<JButton> list = new ArrayList<JButton>();
         for (JButton button : list) {
             questionPanel.add(button);
         }
+        mainPanel.add(questionPanel, BorderLayout.CENTER);
+        questionPanel.setLayout(new GridLayout(2, 2, 10, 10));
+        questionPanel.add(questionLabel);
     }
 
     public static void main(String[] args) {

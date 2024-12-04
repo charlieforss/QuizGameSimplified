@@ -1,13 +1,17 @@
+import java.io.Serializable;
 import java.util.List;
 
-public class Question {
+public class Question implements Serializable {
     private String text;
-    private List<String> choices;
+    private List<String> options;
     private String correctAnswer;
 
-    public Question(String text, List<String> choices, String correctAnswer) {
+    public Question(String text, List<String> options, String correctAnswer) {
+        if (options == null || options.size() != 4) {
+            throw new IllegalArgumentException("Question must have 4 choices");
+        }
         this.text = text;
-        this.choices = choices;
+        this.options = options;
         this.correctAnswer = correctAnswer;
     }
 
@@ -15,8 +19,8 @@ public class Question {
         return text;
     }
 
-    public List<String> getChoices() {
-        return choices;
+    public List<String> getOptions() {
+        return options;
     }
 
     public String getCorrectAnswer() {
@@ -24,7 +28,8 @@ public class Question {
     }
 
     public boolean isCorrectAnswer(String answer) {
-        return choices.contains(answer);
+        return correctAnswer.equalsIgnoreCase(answer);
     }
+
 
 }

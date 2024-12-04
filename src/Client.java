@@ -7,16 +7,16 @@ import java.net.UnknownHostException;
 public class Client{
 
     private Socket socket;
-    private ObjectOutputStream out;
+    private static ObjectOutputStream out;
     private ObjectInputStream in;
-    private ClientGUI ClientGUI
+    private GUI GUI;
 
     public Client(String serverAddress, int serverPort){
         try {
             socket = new Socket(serverAddress, serverPort);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
-            CLientGUI = new ClientGUI(this);
+            GUI = new GUI(this);
         }
         catch (IOException e){
             e.printStackTrace();
@@ -25,7 +25,7 @@ public class Client{
 
     public void Start(){
         questionListener();
-        ClientGUI.setVisible(true);
+        GUI.setVisible(true);
     }
 
     private void questionListener(){
@@ -33,21 +33,20 @@ public class Client{
             try {
                 while (true){
                     Question question = (Question) in.readObject();
+                    GUI.displayQuestions(question);
                     System.out.println("Recieved question from server: " + question);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
         ).start();
     }
 
-    private void sendAnswer(){
+    public static void sendAnswer(String answer){
         try {
-            out.writeObject("Answer");
-            out.writeObject("Correct answer");
+            out.writeObject("SEND_ANSWER");
+            out.writeObject(answer);
             out.flush();
         }
         catch (IOException e){
@@ -55,15 +54,8 @@ public class Client{
         }
     }
 
-    private void recieveResault(){
-        try {
-            String resault = (String) in.readObject();
-            System.out.println("Recieved result from server: " + resault);
-        }
-        catch (IOException e){
-            e.printStackTrace();
-        }
-
+    private void recieveResult(String result){
+        GUI.displayResault(result);
     }
 
     public static void main(String[] args) {

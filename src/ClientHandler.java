@@ -1,40 +1,83 @@
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 
-public class ClientHandler implements Runnable{
-
+public class ClientHandler implements Runnable {
     private Socket clientSocket;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
-    private Server server;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
+    private QuizServer server;
     private String clientId;
+    private Question currentQuestion;
 
-
-    private void handleClient(Socket socket, Server server, String clientId){
+    public ClientHandler(Socket socket, QuizServer server, String clientId) {
         this.clientSocket = socket;
         this.server = server;
         this.clientId = clientId;
         try {
-            out = new ObjectOutputStream(socket.getOutputStream());
-            out.flush();
-            in = new ObjectInputStream(socket.getInputStream());
-        } catch (Exception e) {
-            System.out.println("Error in client handler: " + e.getMessage());
+            this.outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+            this.outputStream.flush();
+            this.inputStream = new ObjectInputStream(clientSocket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-    }
-
-    private void sendQuestion(){
-
-    }
-
-    private void recieveAnswer(){
-
     }
 
     @Override
     public void run() {
-        handleClient();
+        try {
+            while (true) {
+                String action = (String) inputStream.readObject();
+                if ("GET_QUESTION".equals(action)) {
+                    sendQuestion();
+                } else if ("SEND_ANSWER".equals(action)) {
+                    String answer = (String) inputStream.readObject();
+                    server.receiveAnswer(clientId, answer, currentQuestion);
+                }
+            }
+        } catch (EOFException e) {
+            System.out.println("Client " + clientId + " disconnected.");
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection();
+        }
+    }
+
+    private void sendQuestion() {
+        try {
+            currentQuestion = server.getNextQuestion();
+            if (currentQuestion != null) {
+                outputStream.writeObject(currentQuestion);
+                outputStream.flush();
+            } else {
+                outputStream.writeObject("No more questions available.");
+                outputStream.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendResult(String result) {
+        try {
+            outputStream.writeObject(result);
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Cleanup method to close connections
+    private void closeConnection() {
+        try {
+            if (inputStream != null) inputStream.close();
+            if (outputStream != null) outputStream.close();
+            if (clientSocket != null) clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void close() {
     }
 }

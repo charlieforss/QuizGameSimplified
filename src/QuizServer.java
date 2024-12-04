@@ -3,17 +3,20 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class QuizServer{
     private ServerSocket serverSocket;
     private List<ClientHandler> clients;
-    private List<Question> questions;
+    private Queue<Question> questions;
 
     public QuizServer (int port){
         try {
             serverSocket = new ServerSocket(port);
             clients = new ArrayList<>();
-            questions = new ArrayList<>();
+            questions = new ConcurrentLinkedQueue<>();
+            loadQuestions();
             System.out.println("Server started");
 
         }
@@ -27,7 +30,7 @@ public class QuizServer{
             while (true){
                 Socket socket = serverSocket.accept();
                 String clientId = "Client" + (clients.size() + 1);
-                ClientHandler clientHandler = new ClientHandler(clientId, socket);
+                ClientHandler clientHandler = new ClientHandler(socket, this, clientId);
                 clients.add(clientHandler);
                 new Thread(clientHandler).start();
             }
@@ -39,16 +42,43 @@ public class QuizServer{
 
 
     private void loadQuestions(){
-        questions.add (new Question("What is the capital of Sweden?", List.of("Stockholm", "Oslo", "Gothenburg", "Malmö", "Helsingborg"), "Stockholm"));
-        questions.add (new Question("What is the capital of Norway?", List.of("Oslo", "Bergen", "Trondheim", "Stavanger", "Tromsø"), "Oslo"));
+        questions.add (new Question("What is the capital of Sweden?", List.of("Stockholm", "Oslo", "Gothenburg", "Malmö"), "Stockholm"));
+        questions.add (new Question("What is the capital of Norway?", List.of("Oslo", "Bergen", "Trondheim", "Stavanger"), "Oslo"));
+        questions.add (new Question("What is the capital of Denmark?", List.of("Copenhagen", "Aarhus", "Odense", "Aalborg"), "Copenhagen"));
+        questions.add (new Question("What is the capital of Germany?", List.of("Berlin", "Munich", "Hamburg", "Cologne"), "Berlin"));
     }
 
-    private void recieveAnwser(clientId, answer){
-        System.out.println("Recieved answer from " + clientId + ": "+ answer);
+    public Question getNextQuestion() {
+        return questions.poll();
     }
 
-    private void evaluateAnswer(){
+    public void receiveAnswer(String clientId, String answer, Question currentQuestion){
+        String result;
+        if (currentQuestion != null) {
+            if (currentQuestion.isCorrectAnswer(answer)) {
+                result = "VICTORY";
+                System.out.println("Player " + clientId + " won the game!");
+            } else {
+                result = "DEFEAT";
+                System.out.println("Player " + clientId + " lost the game!");
+            }
 
+            for (ClientHandler client : clients) {
+                client.sendResult(result);
+            }
+        }
+    }
+
+    public void stopServer() {
+        try {
+            for (ClientHandler client : clients) {
+                client.close();
+            }
+            serverSocket.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

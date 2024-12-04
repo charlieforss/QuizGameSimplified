@@ -33,6 +33,7 @@ public class QuizServer{
                 ClientHandler clientHandler = new ClientHandler(socket, this, clientId);
                 clients.add(clientHandler);
                 new Thread(clientHandler).start();
+                System.out.println("Client connected: " + clientId);
             }
         }
         catch (IOException e){

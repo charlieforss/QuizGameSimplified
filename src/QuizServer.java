@@ -63,27 +63,22 @@ public class QuizServer{
                 System.out.println("Player " + clientId + " lost the game!");
             }
 
-            for (ClientHandler client : clients) {
-                client.sendResult(result);
-            }
+            sendResultToClient(clientId, result);
         }
     }
 
-    public void stopServer() {
-        try {
-            for (ClientHandler client : clients) {
-                client.close();
+    private void sendResultToClient(String clientId, String result) {
+        for (ClientHandler client : clients) {
+            if (client.getClientId().equals(clientId)) {
+                client.sendResult(result);
+                break;
             }
-            serverSocket.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     public static void main(String[] args) {
         QuizServer server = new QuizServer(8080);
+        server.loadQuestions();
         server.start();
-
     }
 }

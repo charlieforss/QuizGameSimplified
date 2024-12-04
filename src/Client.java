@@ -1,67 +1,78 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import javax.swing.*;
+import java.io.*;
+import java.net.*;
 
-public class Client{
-
+public class Client {
     private Socket socket;
-    private static ObjectOutputStream out;
-    private ObjectInputStream in;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
     private GUI GUI;
 
-    public Client(String serverAddress, int serverPort){
+    public Client(String serverAddress, int port) {
         try {
-            socket = new Socket(serverAddress, serverPort);
-            out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
+            // Connect to the server
+            socket = new Socket(serverAddress, port);
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
             GUI = new GUI(this);
-        }
-        catch (IOException e){
+            GUI.setVisible(true);
+        } catch (IOException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Unable to connect to server", "Connection Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
         }
     }
 
-    public void Start(){
-        questionListener();
-        GUI.setVisible(true);
+    public void start() {
+        listenForQuestions();
+        requestQuestion();
     }
 
-    private void questionListener(){
+    private void listenForQuestions() {
         new Thread(() -> {
             try {
-                while (true){
-                    Question question = (Question) in.readObject();
-                    GUI.displayQuestions(question);
-                    System.out.println("Recieved question from server: " + question);
+                while (true) {
+                    Object receivedObject = inputStream.readObject();
+                    if (receivedObject instanceof Question) {
+                        Question question = (Question) receivedObject;
+                        SwingUtilities.invokeLater(() -> GUI.displayQuestion(question));
+                    } else if (receivedObject instanceof String) {
+                        String result = (String) receivedObject;
+                        SwingUtilities.invokeLater(() -> GUI.displayResult(result));
+                    }
                 }
             } catch (IOException | ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+                SwingUtilities.invokeLater(() -> GUI.displayError("Disconnected from server."));
+                //swing ej trådsäker, invoke later, updaterar gui i ordning,
             }
-        }
-        ).start();
+        }).start();
     }
 
-    public static void sendAnswer(String answer){
+    public void requestQuestion() {
         try {
-            out.writeObject("SEND_ANSWER");
-            out.writeObject(answer);
-            out.flush();
-        }
-        catch (IOException e){
+            outputStream.writeObject("GET_QUESTION");
+            outputStream.flush();
+        } catch (IOException e) {
             e.printStackTrace();
+            GUI.displayError("Failed to request question.");
         }
     }
 
-    private void recieveResult(String result){
-        GUI.displayResault(result);
+    // Send answer to the server
+    public void sendAnswer(String answer) {
+        try {
+            outputStream.writeObject("SEND_ANSWER");
+            outputStream.writeObject(answer);
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+            GUI.displayError("Failed to send answer.");
+        }
     }
 
     public static void main(String[] args) {
         Client client = new Client("localhost", 8080);
-        client.Start();
-
+        client.start();
     }
-
 }

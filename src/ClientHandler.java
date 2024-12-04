@@ -25,6 +25,7 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
+            sendQuestion();
             while (true) {
                 String action = (String) inputStream.readObject();
                 if ("GET_QUESTION".equals(action)) {
@@ -67,7 +68,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // Cleanup method to close connections
+    public String getClientId() {
+        return clientId;
+    }
+
     private void closeConnection() {
         try {
             if (inputStream != null) inputStream.close();
@@ -76,8 +80,5 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void close() {
     }
 }

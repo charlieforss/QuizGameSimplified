@@ -10,7 +10,6 @@ public class Client {
 
     public Client(String serverAddress, int port) {
         try {
-            // Connect to the server
             socket = new Socket(serverAddress, port);
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
@@ -59,7 +58,6 @@ public class Client {
         }
     }
 
-    // Send answer to the server
     public void sendAnswer(String answer) {
         try {
             outputStream.writeObject("SEND_ANSWER");

@@ -23,9 +23,6 @@ public class Question implements Serializable {
         return options;
     }
 
-    public String getCorrectAnswer() {
-        return correctAnswer;
-    }
 
     public boolean isCorrectAnswer(String answer) {
         return correctAnswer.equalsIgnoreCase(answer);

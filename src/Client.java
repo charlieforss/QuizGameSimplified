@@ -1,3 +1,21 @@
+/*
+Utgick en del från första projectet vilket har gjort att jag kanske har mer
+klasser än vad som behövs när jag hade kunnat smälla in allt i 3 klasser.
+Jag valde dock att fortsätta med flera för jag tycker det blir lättare att läsa.
+
+Detta har också gjort så jag tagit inspiration från den andra projektet och därmed
+är detta halvbyggt för att lätt kunna utöka och förbättra med t.ex. en databas eller
+ett dokument med frågor.
+
+Ville få klart detta inför inlämningen men det kommer vara något jag sitter och gör på
+fritiden framöver så därför ligger en del onödig kod kvar så ber om ursäkt för det.
+
+Denna kod fungerar enligt beskrivingen men som sagt är inte helt nöjd själv och ska sitta och
+jobba mer på detta då threads och server/clients känns som att jag verkligen måste ha stenkoll på.
+
+om något är oklart så är det bara att fråga!
+ */
+
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
@@ -76,7 +94,7 @@ public class Client {
     }
 
     //halv använd, ligger kvar en del från tidigare variationer när man vill
-    //flera frågor, låter den ligga kvar för framtida förbättringar
+    //ha in flera frågor, låter den ligga kvar för framtida förbättringar
     public void requestQuestion() {
         try {
             outputStream.writeObject("GET_QUESTION");

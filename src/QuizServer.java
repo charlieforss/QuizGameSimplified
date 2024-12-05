@@ -100,7 +100,7 @@ public class QuizServer{
             }
         }
     }
-
+    //bara anpassat för 2 spelare, snabblösning
     private void sendResultToClients(String result, String player1Id, String player2Id) {
         if ("DRAW".equals(result)) {
             sendResultToClient(player1Id, "DRAW");

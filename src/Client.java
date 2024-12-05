@@ -38,6 +38,13 @@ public class Client {
         });
     }
 
+    //missledande namn, tar även in svaren och uppdaterar GUI med resultatet
+    //vill dock inte gå in och ändra pga rädd för att det kommer stöka till det
+    //i början lyssnade den bara efter frågor men märkte att det va enklast att
+    //lägga till svaren här också
+
+    //Invoke later används för att det är en swing inte är trådsäkert.
+    //Den används för att lägga till saker i en event queue som körs i bakgrunden
     private void listenForQuestions() {
         new Thread(() -> {
             try {
@@ -68,6 +75,8 @@ public class Client {
         }).start();
     }
 
+    //halv använd, ligger kvar en del från tidigare variationer när man vill
+    //flera frågor, låter den ligga kvar för framtida förbättringar
     public void requestQuestion() {
         try {
             outputStream.writeObject("GET_QUESTION");
@@ -78,6 +87,7 @@ public class Client {
         }
     }
 
+    //ej använd, dock ville låta ligga kvar pga framtida förbättringar
     public void getResult() {
         try {
             outputStream.writeObject("GET_RESULT");

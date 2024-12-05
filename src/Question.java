@@ -24,7 +24,6 @@ public class Question implements Serializable {
         return options;
     }
 
-
     public int isCorrectAnswer(String answer) {
         int correctAnswerInt;
         if (correctAnswer.equalsIgnoreCase(answer)) {

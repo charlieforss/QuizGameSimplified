@@ -42,7 +42,7 @@ public class GUI extends JFrame {
 
         add(resultPanel, BorderLayout.SOUTH);
 
-        SwingUtilities.invokeLater(() -> client.requestQuestion());
+        SwingUtilities.invokeLater(client::requestQuestion);
 
     }
     //visar frågan och svar

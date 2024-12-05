@@ -10,21 +10,32 @@ public class Client {
 
     public Client(String serverAddress, int port) {
         try {
+            System.out.println("Attempting to connect to server at " + serverAddress + ":" + port);
             socket = new Socket(serverAddress, port);
+            System.out.println("Connected to server successfully");
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
             GUI = new GUI(this);
             GUI.setVisible(true);
         } catch (IOException e) {
+            System.err.println("Error connecting to server: " + e.getMessage());
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Unable to connect to server", "Connection Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Unable to connect to server: " + e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
     }
 
     public void start() {
+        waitForMatch();
         listenForQuestions();
         requestQuestion();
+    }
+
+    public void waitForMatch() {
+        SwingUtilities.invokeLater(() -> {
+            GUI.displayWaitingMessage("Waiting for another player to join...");
+            GUI.disableButtons();
+        });
     }
 
     private void listenForQuestions() {
@@ -37,13 +48,22 @@ public class Client {
                         SwingUtilities.invokeLater(() -> GUI.displayQuestion(question));
                     } else if (receivedObject instanceof String) {
                         String result = (String) receivedObject;
-                        SwingUtilities.invokeLater(() -> GUI.displayResult(result));
+                        if (result.equals("PLAYER_WIN"))
+                            SwingUtilities.invokeLater(() -> GUI.displayResult("PLAYER_WIN"));
+                        else if (result.equals("PLAYER_LOSE"))
+                            SwingUtilities.invokeLater(() -> GUI.displayResult("PLAYER_LOSE"));
+                        else if (result.equals("BOTH_LOSE"))
+                            SwingUtilities.invokeLater(() -> GUI.displayResult("BOTH_LOSE"));
+                        else if (result.equals("DRAW"))
+                            SwingUtilities.invokeLater(() -> GUI.displayResult("DRAW"));
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
-                SwingUtilities.invokeLater(() -> GUI.displayError("Disconnected from server."));
-                //swing ej trådsäker, invoke later, updaterar gui i ordning,
+                SwingUtilities.invokeLater(() -> {
+                    GUI.displayError("Disconnected from server.");
+                    GUI.disableButtons();
+                });
             }
         }).start();
     }
@@ -55,6 +75,16 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
             GUI.displayError("Failed to request question.");
+        }
+    }
+
+    public void getResult() {
+        try {
+            outputStream.writeObject("GET_RESULT");
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+            GUI.displayError("Failed to request result.");
         }
     }
 

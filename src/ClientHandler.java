@@ -25,14 +25,13 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            sendQuestion();
+            server.addClientToWaitingRoom(this);
+            sendWaitingMessage();
             while (true) {
                 String action = (String) inputStream.readObject();
-                if ("GET_QUESTION".equals(action)) {
-                    sendQuestion();
-                } else if ("SEND_ANSWER".equals(action)) {
+                if ("SEND_ANSWER".equals(action)) {
                     String answer = (String) inputStream.readObject();
-                    server.receiveAnswer(clientId, answer, currentQuestion);
+                    server.receiveAnswer(clientId, answer);
                 }
             }
         } catch (EOFException e) {
@@ -44,11 +43,20 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void sendQuestion() {
+    private void sendWaitingMessage() {
         try {
-            currentQuestion = server.getNextQuestion();
-            if (currentQuestion != null) {
-                outputStream.writeObject(currentQuestion);
+            outputStream.writeObject("WAITING");
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void sendQuestion(Question currentQuestion) {
+        try {
+            this.currentQuestion = server.getCurrentQuestion();
+            if (this.currentQuestion != null) {
+                outputStream.writeObject(this.currentQuestion);
                 outputStream.flush();
             } else {
                 outputStream.writeObject("No more questions available.");

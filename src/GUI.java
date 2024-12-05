@@ -9,6 +9,7 @@ public class GUI extends JFrame {
     private JLabel questionLabel;
     private JButton[] optionsButtons;
     private JLabel resultLabel;
+    private JPanel resultPanel;
 
     public GUI(Client client) {
         this.client = client;
@@ -34,13 +35,17 @@ public class GUI extends JFrame {
 
         add(optionsPanel, BorderLayout.CENTER);
 
+        resultPanel = new JPanel();
         resultLabel = new JLabel("");
         resultLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        add(resultLabel, BorderLayout.SOUTH);
+        resultPanel.add(resultLabel);
+
+        add(resultPanel, BorderLayout.SOUTH);
+
         SwingUtilities.invokeLater(() -> client.requestQuestion());
 
     }
-
+    //visar frågan och svar
     public void displayQuestion(Question question) {
         if (question != null) {
             questionLabel.setText(question.getText());
@@ -52,6 +57,7 @@ public class GUI extends JFrame {
             }
 
             resultLabel.setText("");
+            resultPanel.setBackground(null);
         } else {
             questionLabel.setText("No more questions.");
             for (JButton button : optionsButtons) {
@@ -61,7 +67,39 @@ public class GUI extends JFrame {
     }
 
     public void displayResult(String result) {
-        resultLabel.setText(result);
+        SwingUtilities.invokeLater(() -> {
+            switch (result) {
+                case "PLAYER_WIN" -> {
+                    resultLabel.setText("You won!");
+                    resultPanel.setBackground(Color.GREEN);
+                }
+                case "PLAYER_LOSE" -> {
+                    resultLabel.setText("You lost!");
+                    resultPanel.setBackground(Color.RED);
+                }
+                case "DRAW" -> {
+                    resultLabel.setText("It's a draw!");
+                    resultPanel.setBackground(Color.YELLOW);
+                }
+                case "BOTH_LOSE" -> {
+                    resultLabel.setText("Both players got the answer wrong.");
+                    resultPanel.setBackground(Color.GRAY);
+                }
+            }
+        });
+    }
+
+    public void displayWaitingMessage(String message) {
+        questionLabel.setText(message);
+        resultLabel.setText("");
+        resultPanel.setBackground(null);
+        disableButtons();
+    }
+
+    public void disableButtons() {
+        for (JButton button : optionsButtons) {
+            button.setEnabled(false);
+        }
     }
 
     public void displayError(String message) {

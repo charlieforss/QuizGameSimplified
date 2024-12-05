@@ -6,6 +6,7 @@ public class Question implements Serializable {
     private List<String> options;
     private String correctAnswer;
 
+    //serialisering, skapar upp lista med frågorna
     public Question(String text, List<String> options, String correctAnswer) {
         if (options == null || options.size() != 4) {
             throw new IllegalArgumentException("Question must have 4 choices");
@@ -24,9 +25,14 @@ public class Question implements Serializable {
     }
 
 
-    public boolean isCorrectAnswer(String answer) {
-        return correctAnswer.equalsIgnoreCase(answer);
+    public int isCorrectAnswer(String answer) {
+        int correctAnswerInt;
+        if (correctAnswer.equalsIgnoreCase(answer)) {
+            correctAnswerInt = 1;
+            return correctAnswerInt;
+        } else {
+            correctAnswerInt = 0;
+            return correctAnswerInt;
+        }
     }
-
-
 }

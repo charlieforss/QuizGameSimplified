@@ -2,26 +2,51 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+
 public class QuizServer{
     private ServerSocket serverSocket;
     private List<ClientHandler> clients;
-    private Queue<Question> questions;
+    private Question currentQuestion;
+    private MatchInfo currentMatch;
+    private Queue<ClientHandler> waitingClients;
+
 
     public QuizServer (int port){
         try {
             serverSocket = new ServerSocket(port);
             clients = new ArrayList<>();
-            questions = new ConcurrentLinkedQueue<>();
-            loadQuestions();
+            waitingClients = new ConcurrentLinkedQueue<>();
+            currentQuestion = getCurrentQuestion();
+            loadQuestion();
             System.out.println("Server started");
-
         }
         catch (IOException e){
             System.out.println("Server failed to start");
+        }
+    }
+
+
+    public synchronized void addClientToWaitingRoom(ClientHandler client) {
+        waitingClients.offer(client);
+        if (waitingClients.size() >= 2) {
+            startNewMatch();
+        }
+    }
+
+    private void startNewMatch() {
+        if (waitingClients.size() >= 2) {
+            ClientHandler player1 = waitingClients.poll();
+            ClientHandler player2 = waitingClients.poll();
+            player1.sendQuestion(currentQuestion);
+            player2.sendQuestion(currentQuestion);
+            currentMatch = new MatchInfo(currentQuestion);
+            currentMatch.setPlayer1(player1.getClientId());
+            currentMatch.setPlayer2(player2.getClientId());
         }
     }
 
@@ -41,30 +66,29 @@ public class QuizServer{
         }
     }
 
-
-    private void loadQuestions(){
-        questions.add (new Question("What is the capital of Sweden?", List.of("Stockholm", "Oslo", "Gothenburg", "Malmö"), "Stockholm"));
-        questions.add (new Question("What is the capital of Norway?", List.of("Oslo", "Bergen", "Trondheim", "Stavanger"), "Oslo"));
-        questions.add (new Question("What is the capital of Denmark?", List.of("Copenhagen", "Aarhus", "Odense", "Aalborg"), "Copenhagen"));
-        questions.add (new Question("What is the capital of Germany?", List.of("Berlin", "Munich", "Hamburg", "Cologne"), "Berlin"));
+    //gjort det lite krångligt med mening, men det är för att jag bara ville få klart det
+    //man bör kunna koppla detta till en databas eller liknande relativt enkelt
+    private void loadQuestion() {
+        currentQuestion = new Question("What is the capital of Sweden?", List.of("Stockholm", "Oslo", "Gothenburg", "Malmö"), "Stockholm");
     }
 
-    public Question getNextQuestion() {
-        return questions.poll();
+    public synchronized Question getCurrentQuestion() {
+        return currentQuestion;
     }
 
-    public void receiveAnswer(String clientId, String answer, Question currentQuestion){
-        String result;
-        if (currentQuestion != null) {
-            if (currentQuestion.isCorrectAnswer(answer)) {
-                result = "VICTORY";
-                System.out.println("Player " + clientId + " won the game!");
-            } else {
-                result = "DEFEAT";
-                System.out.println("Player " + clientId + " lost the game!");
-            }
+    public synchronized void receiveAnswer(String clientId, String answer) {
+        if (currentMatch == null) return;
 
-            sendResultToClient(clientId, result);
+        if (currentMatch.getPlayer1Id().equals(clientId)) {
+            currentMatch.setPlayer1Answer(answer);
+        } else if (currentMatch.getPlayer2Id().equals(clientId)) {
+            currentMatch.setPlayer2Answer(answer);
+        }
+
+        if (currentMatch.bothPlayersAnswered()) {
+            String result = currentMatch.getResult();
+            sendResultToClients(result, currentMatch.getPlayer1Id(), currentMatch.getPlayer2Id());
+            startNewMatch();
         }
     }
 
@@ -77,9 +101,25 @@ public class QuizServer{
         }
     }
 
+    private void sendResultToClients(String result, String player1Id, String player2Id) {
+        if ("DRAW".equals(result)) {
+            sendResultToClient(player1Id, "DRAW");
+            sendResultToClient(player2Id, "DRAW");
+        } else if ("PLAYER1_WIN".equals(result)) {
+            sendResultToClient(player1Id, "PLAYER_WIN");
+            sendResultToClient(player2Id, "PLAYER_LOSE");
+        } else if ("PLAYER2_WIN".equals(result)) {
+            sendResultToClient(player1Id, "PLAYER_LOSE");
+            sendResultToClient(player2Id, "PLAYER_WIN");
+        } else if ("BOTH_LOSE".equals(result)) {
+            sendResultToClient(player1Id, "BOTH_LOSE");
+            sendResultToClient(player2Id, "BOTH_LOSE");
+        }
+    }
+
     public static void main(String[] args) {
         QuizServer server = new QuizServer(8080);
-        server.loadQuestions();
+        server.loadQuestion();
         server.start();
     }
 }

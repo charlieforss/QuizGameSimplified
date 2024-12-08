@@ -88,7 +88,7 @@ public class GUI extends JFrame {
             }
         });
     }
-
+    //skickar väntar meddelande
     public void displayWaitingMessage(String message) {
         questionLabel.setText(message);
         resultLabel.setText("");
